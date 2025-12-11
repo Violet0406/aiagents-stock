@@ -488,37 +488,67 @@ def main():
         return
 
     # 主界面
-    # 添加单个/批量分析切换
-    col_mode1, col_mode2 = st.columns([1, 3])
-    with col_mode1:
-        analysis_mode = st.radio(
-            "分析模式",
-            ["单个分析", "批量分析"],
-            horizontal=True,
-            help="单个分析：分析单只股票；批量分析：同时分析多只股票"
-        )
-
-    with col_mode2:
-        if analysis_mode == "批量分析":
-            batch_mode = st.radio(
-                "批量模式",
-                ["顺序分析", "多线程并行"],
+    # 添加分析类型选择
+    st.subheader("📊 选择分析类型")
+    analysis_type = st.radio(
+        "",
+        ["个股分析", "ETF分析", "行业分析"],
+        horizontal=True,
+        help="个股分析：分析单只或批量股票；ETF分析：分析ETF基金；行业分析：分析整个行业板块"
+    )
+    
+    st.markdown("---")
+    
+    # 根据分析类型决定是否显示分析模式
+    if analysis_type == "个股分析":
+        # 添加单个/批量分析切换
+        col_mode1, col_mode2 = st.columns([1, 3])
+        with col_mode1:
+            analysis_mode = st.radio(
+                "分析模式",
+                ["单个分析", "批量分析"],
                 horizontal=True,
-                help="顺序分析：按次序分析，稳定但较慢；多线程并行：同时分析多只，快速但消耗资源"
+                help="单个分析：分析单只股票；批量分析：同时分析多只股票"
             )
-            st.session_state.batch_mode = batch_mode
+
+        with col_mode2:
+            if analysis_mode == "批量分析":
+                batch_mode = st.radio(
+                    "批量模式",
+                    ["顺序分析", "多线程并行"],
+                    horizontal=True,
+                    help="顺序分析：按次序分析，稳定但较慢；多线程并行：同时分析多只，快速但消耗资源"
+                )
+                st.session_state.batch_mode = batch_mode
+    else:
+        # ETF分析和行业分析只支持单个分析
+        analysis_mode = "单个分析"
 
     st.markdown("---")
 
+    # 动态输入框提示
+    if analysis_type == "个股分析":
+        input_label = "🔍 请输入股票代码或名称"
+        input_placeholder = "例如: AAPL, 000001, 00700"
+        input_help = "支持A股(如000001)、港股(如00700)和美股(如AAPL)"
+    elif analysis_type == "ETF分析":
+        input_label = "🔍 请输入ETF代码"
+        input_placeholder = "例如: 510300(沪深300ETF), 159915(创业板ETF)"
+        input_help = "支持沪深交易所ETF，6位数字代码，如51xxxx, 56xxxx, 15xxxx, 16xxxx"
+    else:  # 行业分析
+        input_label = "🔍 请输入行业名称"
+        input_placeholder = "例如: 新能源汽车, 半导体, 医药, 人工智能"
+        input_help = "支持东方财富行业分类，可模糊匹配"
+
     if analysis_mode == "单个分析":
-        # 单个股票分析界面
+        # 单个分析界面
         col1, col2, col3 = st.columns([2, 1, 1])
 
         with col1:
             stock_input = st.text_input(
-                "🔍 请输入股票代码或名称",
-                placeholder="例如: AAPL, 000001, 00700",
-                help="支持A股(如000001)、港股(如00700)和美股(如AAPL)"
+                input_label,
+                placeholder=input_placeholder,
+                help=input_help
             )
 
         with col2:
@@ -551,57 +581,58 @@ def main():
                     del st.session_state.batch_analysis_results
                 st.success("已清除批量分析结果")
 
-    # 分析师团队选择
-    st.markdown("---")
-    st.subheader("👥 选择分析师团队")
+    # 分析师团队选择（仅个股分析显示）
+    if analysis_type == "个股分析":
+        st.markdown("---")
+        st.subheader("👥 选择分析师团队")
 
-    col1, col2, col3 = st.columns(3)
+        col1, col2, col3 = st.columns(3)
 
-    with col1:
-        enable_technical = st.checkbox("📊 技术分析师", value=True,
-                                       help="负责技术指标分析、图表形态识别、趋势判断")
-        enable_fundamental = st.checkbox("💼 基本面分析师", value=True,
-                                        help="负责公司财务分析、行业研究、估值分析")
+        with col1:
+            enable_technical = st.checkbox("📊 技术分析师", value=True,
+                                           help="负责技术指标分析、图表形态识别、趋势判断")
+            enable_fundamental = st.checkbox("💼 基本面分析师", value=True,
+                                            help="负责公司财务分析、行业研究、估值分析")
 
-    with col2:
-        enable_fund_flow = st.checkbox("💰 资金面分析师", value=True,
-                                      help="负责资金流向分析、主力行为研究")
-        enable_risk = st.checkbox("⚠️ 风险管理师", value=True,
-                                 help="负责风险识别、风险评估、风险控制策略制定")
+        with col2:
+            enable_fund_flow = st.checkbox("💰 资金面分析师", value=True,
+                                          help="负责资金流向分析、主力行为研究")
+            enable_risk = st.checkbox("⚠️ 风险管理师", value=True,
+                                     help="负责风险识别、风险评估、风险控制策略制定")
 
-    with col3:
-        enable_sentiment = st.checkbox("📈 市场情绪分析师", value=True,
-                                      help="负责市场情绪研究、ARBR指标分析（仅A股）")
-        enable_news = st.checkbox("📰 新闻分析师", value=True,
-                                 help="负责新闻事件分析、舆情研究（仅A股，qstock数据源）")
+        with col3:
+            enable_sentiment = st.checkbox("📈 市场情绪分析师", value=True,
+                                          help="负责市场情绪研究、ARBR指标分析（仅A股）")
+            enable_news = st.checkbox("📰 新闻分析师", value=True,
+                                     help="负责新闻事件分析、舆情研究（仅A股，qstock数据源）")
 
-    # 显示已选择的分析师
-    selected_analysts = []
-    if enable_technical:
-        selected_analysts.append("技术分析师")
-    if enable_fundamental:
-        selected_analysts.append("基本面分析师")
-    if enable_fund_flow:
-        selected_analysts.append("资金面分析师")
-    if enable_risk:
-        selected_analysts.append("风险管理师")
-    if enable_sentiment:
-        selected_analysts.append("市场情绪分析师")
-    if enable_news:
-        selected_analysts.append("新闻分析师")
+        # 显示已选择的分析师
+        selected_analysts = []
+        if enable_technical:
+            selected_analysts.append("技术分析师")
+        if enable_fundamental:
+            selected_analysts.append("基本面分析师")
+        if enable_fund_flow:
+            selected_analysts.append("资金面分析师")
+        if enable_risk:
+            selected_analysts.append("风险管理师")
+        if enable_sentiment:
+            selected_analysts.append("市场情绪分析师")
+        if enable_news:
+            selected_analysts.append("新闻分析师")
 
-    if selected_analysts:
-        st.info(f"✅ 已选择 {len(selected_analysts)} 位分析师: {', '.join(selected_analysts)}")
-    else:
-        st.warning("⚠️ 请至少选择一位分析师")
+        if selected_analysts:
+            st.info(f"✅ 已选择 {len(selected_analysts)} 位分析师: {', '.join(selected_analysts)}")
+        else:
+            st.warning("⚠️ 请至少选择一位分析师")
 
-    # 保存选择到session_state
-    st.session_state.enable_technical = enable_technical
-    st.session_state.enable_fundamental = enable_fundamental
-    st.session_state.enable_fund_flow = enable_fund_flow
-    st.session_state.enable_risk = enable_risk
-    st.session_state.enable_sentiment = enable_sentiment
-    st.session_state.enable_news = enable_news
+        # 保存选择到session_state
+        st.session_state.enable_technical = enable_technical
+        st.session_state.enable_fundamental = enable_fundamental
+        st.session_state.enable_fund_flow = enable_fund_flow
+        st.session_state.enable_risk = enable_risk
+        st.session_state.enable_sentiment = enable_sentiment
+        st.session_state.enable_news = enable_news
 
     st.markdown("---")
 
@@ -610,64 +641,74 @@ def main():
             st.error("❌ 请先配置 DeepSeek API Key")
             return
 
-        # 检查是否至少选择了一位分析师
-        if not selected_analysts:
-            st.error("❌ 请至少选择一位分析师参与分析")
-            return
-
-        if analysis_mode == "单个分析":
-            # 单个股票分析
-            # 清除之前的分析结果
-            if 'analysis_completed' in st.session_state:
-                del st.session_state.analysis_completed
-            if 'stock_info' in st.session_state:
-                del st.session_state.stock_info
-            if 'agents_results' in st.session_state:
-                del st.session_state.agents_results
-            if 'discussion_result' in st.session_state:
-                del st.session_state.discussion_result
-            if 'final_decision' in st.session_state:
-                del st.session_state.final_decision
-            if 'just_completed' in st.session_state:
-                del st.session_state.just_completed
-
-            run_stock_analysis(stock_input, period)
-
-        else:
-            # 批量股票分析
-            # 解析股票代码列表
-            stock_list = parse_stock_list(stock_input)
-
-            if not stock_list:
-                st.error("❌ 请输入有效的股票代码")
+        # 根据分析类型进行相应的分析
+        if analysis_type == "个股分析":
+            # 检查是否至少选择了一位分析师
+            if not selected_analysts:
+                st.error("❌ 请至少选择一位分析师参与分析")
                 return
 
-            if len(stock_list) > 20:
-                st.warning(f"⚠️ 检测到 {len(stock_list)} 只股票，建议一次分析不超过20只")
+            if analysis_mode == "单个分析":
+                # 单个股票分析
+                # 清除之前的分析结果
+                if 'analysis_completed' in st.session_state:
+                    del st.session_state.analysis_completed
+                if 'stock_info' in st.session_state:
+                    del st.session_state.stock_info
+                if 'agents_results' in st.session_state:
+                    del st.session_state.agents_results
+                if 'discussion_result' in st.session_state:
+                    del st.session_state.discussion_result
+                if 'final_decision' in st.session_state:
+                    del st.session_state.final_decision
+                if 'just_completed' in st.session_state:
+                    del st.session_state.just_completed
 
-            st.info(f"📊 准备分析 {len(stock_list)} 只股票: {', '.join(stock_list)}")
+                run_stock_analysis(stock_input, period)
 
-            # 清除之前的分析结果（包括单个和批量）
-            if 'batch_analysis_results' in st.session_state:
-                del st.session_state.batch_analysis_results
-            if 'analysis_completed' in st.session_state:
-                del st.session_state.analysis_completed
-            if 'stock_info' in st.session_state:
-                del st.session_state.stock_info
-            if 'agents_results' in st.session_state:
-                del st.session_state.agents_results
-            if 'discussion_result' in st.session_state:
-                del st.session_state.discussion_result
-            if 'final_decision' in st.session_state:
-                del st.session_state.final_decision
-            if 'just_completed' in st.session_state:
-                del st.session_state.just_completed
+            else:
+                # 批量股票分析
+                # 解析股票代码列表
+                stock_list = parse_stock_list(stock_input)
 
-            # 获取批量模式
-            batch_mode = st.session_state.get('batch_mode', '顺序分析')
+                if not stock_list:
+                    st.error("❌ 请输入有效的股票代码")
+                    return
 
-            # 运行批量分析
-            run_batch_analysis(stock_list, period, batch_mode)
+                if len(stock_list) > 20:
+                    st.warning(f"⚠️ 检测到 {len(stock_list)} 只股票，建议一次分析不超过20只")
+
+                st.info(f"📊 准备分析 {len(stock_list)} 只股票: {', '.join(stock_list)}")
+
+                # 清除之前的分析结果（包括单个和批量）
+                if 'batch_analysis_results' in st.session_state:
+                    del st.session_state.batch_analysis_results
+                if 'analysis_completed' in st.session_state:
+                    del st.session_state.analysis_completed
+                if 'stock_info' in st.session_state:
+                    del st.session_state.stock_info
+                if 'agents_results' in st.session_state:
+                    del st.session_state.agents_results
+                if 'discussion_result' in st.session_state:
+                    del st.session_state.discussion_result
+                if 'final_decision' in st.session_state:
+                    del st.session_state.final_decision
+                if 'just_completed' in st.session_state:
+                    del st.session_state.just_completed
+
+                # 获取批量模式
+                batch_mode = st.session_state.get('batch_mode', '顺序分析')
+
+                # 运行批量分析
+                run_batch_analysis(stock_list, period, batch_mode)
+        
+        elif analysis_type == "ETF分析":
+            # ETF分析
+            run_etf_analysis(stock_input, period)
+        
+        elif analysis_type == "行业分析":
+            # 行业分析
+            run_industry_analysis(stock_input)
 
     # 检查是否有已完成的批量分析结果（优先显示批量结果）
     if 'batch_analysis_results' in st.session_state and st.session_state.batch_analysis_results:
@@ -2663,6 +2704,279 @@ def display_detailed_cards(results, period):
 
     except Exception as e:
         st.error(f"显示详细信息时出错: {str(e)}")
+
+def run_etf_analysis(symbol, period):
+    """运行ETF分析"""
+    # 进度条
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    try:
+        # 1. 获取ETF数据
+        status_text.text("📈 正在获取ETF数据...")
+        progress_bar.progress(10)
+        
+        from etf_data import ETFDataFetcher
+        etf_fetcher = ETFDataFetcher()
+        
+        # 获取ETF基本信息
+        etf_info = etf_fetcher.get_etf_info(symbol)
+        if not etf_info.get('data_success'):
+            st.error(f"❌ {etf_info.get('error', '获取ETF信息失败')}")
+            return
+        
+        progress_bar.progress(20)
+        
+        # 显示ETF基本信息
+        st.subheader(f"📊 {etf_info.get('name', 'N/A')} ({etf_info.get('symbol', 'N/A')})")
+        
+        col1, col2, col3, col4, col5 = st.columns(5)
+        with col1:
+            st.metric("当前价格", f"{etf_info.get('current_price', 'N/A')} 元")
+        with col2:
+            change_pct = etf_info.get('change_percent', 'N/A')
+            st.metric("涨跌幅", f"{change_pct}%")
+        with col3:
+            st.metric("溢价率", etf_info.get('premium_rate', 'N/A'))
+        with col4:
+            st.metric("基金规模", etf_info.get('fund_size', 'N/A'))
+        with col5:
+            st.metric("管理费率", etf_info.get('management_fee', 'N/A'))
+        
+        # 2. 获取ETF历史数据
+        status_text.text("📊 正在获取ETF历史数据...")
+        etf_data = etf_fetcher.get_etf_hist_data(symbol, period)
+        
+        if isinstance(etf_data, dict) and "error" in etf_data:
+            st.error(f"❌ {etf_data['error']}")
+            return
+        
+        progress_bar.progress(30)
+        
+        # 计算技术指标
+        from stock_data import StockDataFetcher
+        stock_fetcher = StockDataFetcher()
+        etf_data_with_indicators = stock_fetcher.calculate_technical_indicators(etf_data)
+        indicators = stock_fetcher.get_latest_indicators(etf_data_with_indicators)
+        
+        # 显示ETF图表
+        display_stock_chart(etf_data_with_indicators, etf_info)
+        progress_bar.progress(40)
+        
+        # 3. 获取ETF持仓数据
+        status_text.text("💼 正在获取ETF持仓数据...")
+        holdings_data = etf_fetcher.get_etf_holdings(symbol)
+        progress_bar.progress(50)
+        
+        # 4. 获取ETF行业配置
+        status_text.text("🏭 正在获取ETF行业配置...")
+        sector_data = etf_fetcher.get_etf_sector_allocation(symbol)
+        progress_bar.progress(60)
+        
+        # 5. 初始化ETF AI分析系统
+        status_text.text("🤖 正在初始化ETF AI分析系统...")
+        from etf_agents import ETFAnalysisAgents
+        selected_model = st.session_state.get('selected_model', 'deepseek-chat')
+        etf_agents = ETFAnalysisAgents(model=selected_model)
+        progress_bar.progress(70)
+        
+        # 6. 运行ETF分析
+        status_text.text("🔍 ETF分析师团队正在分析,请耐心等待...")
+        agents_results = etf_agents.run_etf_analysis(
+            etf_info, etf_data_with_indicators, indicators, 
+            holdings_data, sector_data
+        )
+        progress_bar.progress(90)
+        
+        # 显示各分析师报告
+        display_agents_analysis(agents_results)
+        
+        # 7. 最终决策
+        status_text.text("📋 正在制定最终投资决策...")
+        final_decision = etf_agents.make_etf_final_decision(agents_results, etf_info)
+        progress_bar.progress(100)
+        
+        # 显示最终决策
+        display_final_decision(final_decision, etf_info, agents_results, None)
+        
+        # 保存分析结果到session_state
+        st.session_state.etf_analysis_completed = True
+        st.session_state.etf_info = etf_info
+        st.session_state.etf_agents_results = agents_results
+        st.session_state.etf_final_decision = final_decision
+        
+        status_text.text("✅ ETF分析完成！")
+        time.sleep(1)
+        status_text.empty()
+        progress_bar.empty()
+        
+    except Exception as e:
+        st.error(f"❌ ETF分析过程中出现错误: {str(e)}")
+        import traceback
+        st.error(traceback.format_exc())
+        progress_bar.empty()
+        status_text.empty()
+
+def run_industry_analysis(industry_name):
+    """运行行业分析"""
+    # 进度条
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    try:
+        # 1. 获取行业数据
+        status_text.text("📈 正在获取行业数据...")
+        progress_bar.progress(10)
+        
+        from industry_analysis_data import IndustryAnalysisDataFetcher
+        industry_fetcher = IndustryAnalysisDataFetcher()
+        
+        # 获取行业行情
+        industry_data = industry_fetcher.get_industry_quotes(industry_name)
+        if not industry_data.get('data_success'):
+            st.error(f"❌ {industry_data.get('error', '获取行业数据失败')}")
+            return
+        
+        progress_bar.progress(20)
+        
+        # 显示行业基本信息
+        st.subheader(f"📊 {industry_data.get('industry_name', 'N/A')} 行业分析")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            change_pct = industry_data.get('change_percent', 'N/A')
+            st.metric("行业涨跌幅", f"{change_pct}%")
+        with col2:
+            st.metric("成交额", industry_data.get('amount', 'N/A'))
+        with col3:
+            st.metric("领涨股票", industry_data.get('leading_stock', 'N/A'))
+        with col4:
+            st.metric("领涨涨跌幅", f"{industry_data.get('leading_change', 'N/A')}%")
+        
+        # 2. 获取成分股
+        status_text.text("📊 正在获取行业成分股...")
+        constituents_data = industry_fetcher.get_industry_constituents(industry_data['industry_name'])
+        progress_bar.progress(35)
+        
+        # 3. 获取资金流向
+        status_text.text("💰 正在获取行业资金流向...")
+        capital_data = industry_fetcher.get_industry_capital_flow(industry_data['industry_name'])
+        progress_bar.progress(45)
+        
+        # 4. 计算行业估值
+        status_text.text("📈 正在计算行业估值...")
+        valuation_data = industry_fetcher.get_industry_valuation(constituents_data)
+        progress_bar.progress(55)
+        
+        # 5. 筛选龙头股
+        status_text.text("🏆 正在筛选行业龙头...")
+        leading_data = industry_fetcher.get_industry_leading_stocks(constituents_data, top_n=10)
+        progress_bar.progress(65)
+        
+        # 显示龙头股
+        if leading_data.get('data_success'):
+            st.subheader("🏆 行业龙头股票（按市值排名）")
+            leading_stocks = leading_data.get('leading_stocks', [])
+            
+            # 使用卡片展示前5只龙头股
+            for i in range(0, min(5, len(leading_stocks)), 5):
+                cols = st.columns(5)
+                for j, col in enumerate(cols):
+                    if i + j < len(leading_stocks):
+                        stock = leading_stocks[i + j]
+                        with col:
+                            st.markdown(f"""
+                            <div class="metric-card">
+                                <h4>{stock.get('name', 'N/A')}</h4>
+                                <p><strong>{stock.get('code', 'N/A')}</strong></p>
+                                <p>价格: {stock.get('price', 'N/A')}</p>
+                                <p>涨跌: {stock.get('change_percent', 'N/A')}%</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+        
+        # 6. 初始化行业AI分析系统
+        status_text.text("🤖 正在初始化行业AI分析系统...")
+        from industry_analysis_agents import IndustryAnalysisAgents
+        selected_model = st.session_state.get('selected_model', 'deepseek-chat')
+        industry_agents = IndustryAnalysisAgents(model=selected_model)
+        progress_bar.progress(75)
+        
+        # 7. 运行行业分析
+        status_text.text("🔍 行业分析师团队正在分析,请耐心等待...")
+        agents_results = industry_agents.run_industry_analysis(
+            industry_data, constituents_data, capital_data, 
+            valuation_data, leading_data
+        )
+        progress_bar.progress(95)
+        
+        # 显示各分析师报告
+        display_agents_analysis(agents_results)
+        
+        # 8. 最终决策
+        status_text.text("📋 正在制定最终投资策略...")
+        final_decision = industry_agents.make_industry_final_decision(agents_results, industry_data)
+        progress_bar.progress(100)
+        
+        # 显示最终决策（使用行业格式）
+        st.subheader("📋 最终投资策略")
+        if isinstance(final_decision, dict) and "decision_text" not in final_decision:
+            col1, col2 = st.columns([1, 2])
+            
+            with col1:
+                rating = final_decision.get('rating', '未知')
+                rating_color = {"买入": "🟢", "持有": "🟡", "卖出": "🔴"}.get(rating, "⚪")
+                
+                st.markdown(f"""
+                <div class="decision-card">
+                    <h3 style="text-align: center;">{rating_color} {rating}</h3>
+                    <h4 style="text-align: center;">投资评级</h4>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                confidence = final_decision.get('confidence_level', 'N/A')
+                st.metric("信心度", f"{confidence}/10")
+                
+                allocation = final_decision.get('allocation_ratio', 'N/A')
+                st.metric("建议配置比例", allocation)
+                
+                holding_period = final_decision.get('holding_period', 'N/A')
+                st.metric("持有周期", holding_period)
+            
+            with col2:
+                st.markdown("**🎯 推荐股票:**")
+                recommended_stocks = final_decision.get('recommended_stocks', [])
+                if recommended_stocks:
+                    for stock in recommended_stocks:
+                        st.write(f"- {stock}")
+                else:
+                    st.write("请参考分析师报告")
+                
+                st.markdown("**📋 操作建议:**")
+                st.write(final_decision.get('operation_advice', '暂无建议'))
+                
+                st.markdown("**⚠️ 风险提示:**")
+                st.write(final_decision.get('risk_warning', '暂无'))
+        else:
+            decision_text = final_decision.get('decision_text', str(final_decision))
+            st.write(decision_text)
+        
+        # 保存分析结果到session_state
+        st.session_state.industry_analysis_completed = True
+        st.session_state.industry_data = industry_data
+        st.session_state.industry_agents_results = agents_results
+        st.session_state.industry_final_decision = final_decision
+        
+        status_text.text("✅ 行业分析完成！")
+        time.sleep(1)
+        status_text.empty()
+        progress_bar.empty()
+        
+    except Exception as e:
+        st.error(f"❌ 行业分析过程中出现错误: {str(e)}")
+        import traceback
+        st.error(traceback.format_exc())
+        progress_bar.empty()
+        status_text.empty()
 
 if __name__ == "__main__":
     main()
