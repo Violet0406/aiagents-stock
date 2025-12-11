@@ -307,7 +307,21 @@ def main():
             if st.button("💰 主力选股", width='stretch', key="nav_main_force", help="基于主力资金流向的选股策略"):
                 st.session_state.show_main_force = True
                 for key in ['show_history', 'show_monitor', 'show_config', 'show_sector_strategy',
-                           'show_longhubang', 'show_portfolio']:
+                           'show_longhubang', 'show_portfolio', 'show_etf_analysis', 'show_industry_analysis']:
+                    if key in st.session_state:
+                        del st.session_state[key]
+            
+            if st.button("💼 ETF分析", width='stretch', key="nav_etf_analysis", help="ETF基金深度分析"):
+                st.session_state.show_etf_analysis = True
+                for key in ['show_history', 'show_monitor', 'show_config', 'show_main_force',
+                           'show_sector_strategy', 'show_longhubang', 'show_portfolio', 'show_industry_analysis']:
+                    if key in st.session_state:
+                        del st.session_state[key]
+            
+            if st.button("📊 行业分析", width='stretch', key="nav_industry_analysis", help="行业板块深度分析"):
+                st.session_state.show_industry_analysis = True
+                for key in ['show_history', 'show_monitor', 'show_config', 'show_main_force',
+                           'show_sector_strategy', 'show_longhubang', 'show_portfolio', 'show_etf_analysis']:
                     if key in st.session_state:
                         del st.session_state[key]
 
@@ -469,6 +483,16 @@ def main():
     # 检查是否显示智瞰龙虎
     if 'show_longhubang' in st.session_state and st.session_state.show_longhubang:
         display_longhubang()
+        return
+    
+    # 检查是否显示ETF分析
+    if 'show_etf_analysis' in st.session_state and st.session_state.show_etf_analysis:
+        display_etf_analysis_page()
+        return
+    
+    # 检查是否显示行业分析
+    if 'show_industry_analysis' in st.session_state and st.session_state.show_industry_analysis:
+        display_industry_analysis_page()
         return
 
     # 检查是否显示AI盯盘
@@ -2704,6 +2728,131 @@ def display_detailed_cards(results, period):
 
     except Exception as e:
         st.error(f"显示详细信息时出错: {str(e)}")
+
+def display_etf_analysis_page():
+    """显示ETF分析页面"""
+    st.subheader("💼 ETF基金分析")
+    
+    st.markdown("""
+    <div class="agent-card">
+        <p>ETF（Exchange Traded Fund）即交易型开放式指数基金，可在交易所上市交易。</p>
+        <p>本系统提供专业的ETF分析，包括技术面、配置结构、估值分析等。</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 输入ETF代码
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        etf_code = st.text_input(
+            "🔍 请输入ETF代码",
+            placeholder="例如: 510300(沪深300ETF), 159915(创业板ETF)",
+            help="支持沪深交易所ETF，6位数字代码"
+        )
+    
+    with col2:
+        st.write("")
+        st.write("")
+        analyze_button = st.button("🚀 开始分析", type="primary", width='stretch')
+    
+    # 周期选择
+    period = st.selectbox(
+        "数据周期",
+        ["1y", "6mo", "3mo", "1mo"],
+        index=0
+    )
+    
+    # 示例ETF
+    st.markdown("---")
+    st.markdown("### 📊 热门ETF示例")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        if st.button("510300 沪深300ETF"):
+            st.session_state.etf_example = "510300"
+            st.rerun()
+    with col2:
+        if st.button("159915 创业板ETF"):
+            st.session_state.etf_example = "159915"
+            st.rerun()
+    with col3:
+        if st.button("510500 中证500ETF"):
+            st.session_state.etf_example = "510500"
+            st.rerun()
+    with col4:
+        if st.button("512690 酒ETF"):
+            st.session_state.etf_example = "512690"
+            st.rerun()
+    
+    # 如果点击了示例按钮，自动填充
+    if 'etf_example' in st.session_state:
+        etf_code = st.session_state.etf_example
+        del st.session_state.etf_example
+        analyze_button = True
+    
+    if analyze_button and etf_code:
+        if not check_api_key():
+            st.error("❌ 请先配置 DeepSeek API Key")
+            return
+        
+        run_etf_analysis(etf_code, period)
+
+def display_industry_analysis_page():
+    """显示行业分析页面"""
+    st.subheader("📊 行业板块分析")
+    
+    st.markdown("""
+    <div class="agent-card">
+        <p>行业分析帮助您全面了解某个行业板块的整体情况、龙头企业、投资机会等。</p>
+        <p>本系统提供专业的行业分析，包括趋势判断、资金流向、个股精选等。</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 输入行业名称
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        industry_name = st.text_input(
+            "🔍 请输入行业名称",
+            placeholder="例如: 新能源汽车, 半导体, 医药, 人工智能",
+            help="支持东方财富行业分类，可模糊匹配"
+        )
+    
+    with col2:
+        st.write("")
+        st.write("")
+        analyze_button = st.button("🚀 开始分析", type="primary", width='stretch')
+    
+    # 示例行业
+    st.markdown("---")
+    st.markdown("### 🏭 热门行业示例")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        if st.button("新能源汽车"):
+            st.session_state.industry_example = "新能源汽车"
+            st.rerun()
+    with col2:
+        if st.button("半导体"):
+            st.session_state.industry_example = "半导体"
+            st.rerun()
+    with col3:
+        if st.button("医药生物"):
+            st.session_state.industry_example = "医药生物"
+            st.rerun()
+    with col4:
+        if st.button("人工智能"):
+            st.session_state.industry_example = "人工智能"
+            st.rerun()
+    
+    # 如果点击了示例按钮，自动填充
+    if 'industry_example' in st.session_state:
+        industry_name = st.session_state.industry_example
+        del st.session_state.industry_example
+        analyze_button = True
+    
+    if analyze_button and industry_name:
+        if not check_api_key():
+            st.error("❌ 请先配置 DeepSeek API Key")
+            return
+        
+        run_industry_analysis(industry_name)
 
 def run_etf_analysis(symbol, period):
     """运行ETF分析"""
