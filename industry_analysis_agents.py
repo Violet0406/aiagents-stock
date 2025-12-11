@@ -5,6 +5,8 @@
 from deepseek_client import DeepSeekClient
 from typing import Dict, Any, List
 import time
+import re
+import json
 
 
 class IndustryAnalysisAgents:
@@ -426,13 +428,11 @@ class IndustryAnalysisAgents:
         
         try:
             # 尝试解析JSON响应
-            import re
-            import json
             json_match = re.search(r'\{.*\}', response, re.DOTALL)
             if json_match:
                 decision_json = json.loads(json_match.group())
                 return decision_json
             else:
                 return {"decision_text": response}
-        except:
+        except (json.JSONDecodeError, AttributeError):
             return {"decision_text": response}

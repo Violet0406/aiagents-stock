@@ -284,7 +284,7 @@ class IndustryAnalysisDataFetcher:
                         pe_float = float(pe)
                         if 0 < pe_float < 1000:  # 过滤异常值
                             pe_values.append(pe_float)
-                    except:
+                    except (ValueError, TypeError):
                         pass
                 
                 # 市值
@@ -292,7 +292,7 @@ class IndustryAnalysisDataFetcher:
                 if market_cap != 'N/A' and market_cap is not None:
                     try:
                         market_cap_values.append(float(market_cap))
-                    except:
+                    except (ValueError, TypeError):
                         pass
             
             # 计算平均值和中位数
@@ -351,7 +351,7 @@ class IndustryAnalysisDataFetcher:
                     try:
                         stock['market_cap_float'] = float(market_cap)
                         sorted_stocks.append(stock)
-                    except:
+                    except (ValueError, TypeError):
                         pass
             
             # 按市值降序排序

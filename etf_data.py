@@ -118,7 +118,7 @@ class ETFDataFetcher:
                             premium_rate = ((current_price - unit_nav) / unit_nav) * 100
                             etf_info['premium_rate'] = f"{premium_rate:.2f}%"
                             print(f"✅ 计算溢价率: {etf_info['premium_rate']}")
-                        except:
+                        except (ValueError, TypeError, ZeroDivisionError):
                             pass
             except Exception as e:
                 print(f"⚠️ 计算溢价率失败: {e}")
